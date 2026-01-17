@@ -130,8 +130,7 @@ int main(int argc, char *argv[]) {
                 }
                 uint8_t ver_ihl = buffer[ETH_HLEN];
                 uint8_t ihl = ver_ihl & 0xF; 
-                uint8_t num_bytes_ip_header = ihl*4; // ihl in header represents num of 32 bit words, multiply by 4 to get num bytes
-                printf("NUM BYTES IP HEADER: %hhu", num_bytes_ip_header);
+                size_t num_bytes_ip_header = ihl*4; // ihl in header represents num of 32 bit words, multiply by 4 to get num bytes
                 if (u_num_bytes < ETH_HLEN + num_bytes_ip_header) {
                     printf("Packet length not long enough to contain ip header, continuing");
                     continue;
