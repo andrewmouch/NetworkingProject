@@ -59,5 +59,17 @@ int parse_tcp_header(const unsigned char* segment, size_t len, tcp_result_t* out
     printf("          TCP Set Flags: ");
     print_tcp_set_flags(tcp_header->th_flags);
     printf("\n");
+    
+    out->source_port = ntohs(tcp_header->th_sport);
+    out->dest_port = ntohs(tcp_header->th_dport);
+    out->seq_number = ntohl(tcp_header->th_seq);
+    out->ack_number = ntohl(tcp_header->th_ack);
+    out->flag_syn = tcp_header->th_flags & TH_SYN;
+    out->flag_ack = tcp_header->th_flags & TH_ACK;
+    out->flag_fin = tcp_header->th_flags & TH_FIN;
+    out->flag_rst = tcp_header->th_flags & TH_RST;
+    out->flag_psh = tcp_header->th_flags & TH_PUSH;
+    out->flag_urg = tcp_header->th_flags & TH_URG;
+
     return 0;
 }
