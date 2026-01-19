@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
         }
 
         size_t u_num_bytes = (size_t) num_bytes;
-        printf("Packet length: %zu\n", u_num_bytes);
+        printf("Packet length (in bytes): %zu\n", u_num_bytes);
 
         // Linux normalizes headers into ethernet framing (irrespective of whether it may be Wi-Fi or another protocol)
         // Hence why I'm able to call parse ethernet header on all the incoming packets
