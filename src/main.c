@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -10,6 +12,8 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <inttypes.h>
 #include "socket.h"
 #include "checksum.h"
 
@@ -18,9 +22,9 @@ void print_mac_address(unsigned char* bytes) {
 }
 
 void print_protocol_type(uint8_t byte) {
-    if (byte == 6) {
+    if (byte == IPPROTO_TCP) {
         printf("TCP");
-    } else if (byte == 17) {
+    } else if (byte == IPPROTO_UDP) {
         printf("UDP");
     } else {
         printf("Other");
@@ -47,7 +51,7 @@ int main(int argc, char *argv[]) {
     
     printf("Binded socket to provided interface, listening to traffic\n");
     unsigned char buffer[2048];
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 100; i++) {
         ssize_t num_bytes = recv(sockfd, buffer, sizeof(buffer), 0);
 
         if (num_bytes < 0) {
@@ -109,6 +113,14 @@ int main(int argc, char *argv[]) {
                     printf("INVALID");
                 }
                 printf("\n");
+               
+                if (ip_header->protocol == IPPROTO_TCP) {
+                    struct tcphdr *tcp_header = (struct tcphdr*) (buffer + ETH_HLEN + num_bytes_ip_header);
+                    printf("          TCP Source Port: %" PRIu16 "\n", tcp_header->th_sport);
+                    printf("          TCP Destination Port: %" PRIu16 "\n", tcp_header->th_dport);
+                    printf("          TCP Sequence Number: %" PRIu32 "\n", tcp_header->th_seq);
+                    printf("          TCP Acknowledgement Number: %" PRIu32 "\n", tcp_header->th_ack);
+                }
                 break;
             case(ETH_P_IPV6):
                 printf("IPv6 datagram detected, parsing not yet implemented\n");
