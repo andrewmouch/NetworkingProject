@@ -1,6 +1,9 @@
 #pragma once
 
+#include <stdint.h>
+
 int open_raw_socket();
 
-int bind_socket_to_interface(int sockfd, const char* ifname);
+int open_socket_for_interface(const char* ifname);
  
+uint32_t get_ipv4_address_for_interface(const char* ifname, uint32_t* ip_out);

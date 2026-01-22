@@ -11,8 +11,16 @@
 #include <net/if.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 
-int bind_socket_to_interface(int sockfd, const char* ifname) {
+int open_socket_for_interface(const char* ifname) {
+    // Parameter explanation (because it took me forever to understand this):
+    // domain: AF_PACKET defines what layer we're attaching the socket to: the link layer for the lowest level possible
+    //      Going lower than this layer is not possible without getting into the NIC firmware
+    // type: SOCK_RAW means do not parse the packets at all, provide them to us in their binary format as they arrive
+    // protocol: htons(ETH_P_ALL) provide us with ALL the packets, kernel expects the protocol in network order so convert to big endian
+    int sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+
     struct ifreq interface;
     memset(&interface, 0, sizeof(interface));
     strncpy(interface.ifr_name, ifname, IFNAMSIZ - 1);
@@ -34,14 +42,41 @@ int bind_socket_to_interface(int sockfd, const char* ifname) {
     address.sll_ifindex = interface.ifr_ifindex;
     address.sll_protocol = htons(ETH_P_ALL);
 
-    return bind(sockfd, (struct sockaddr*) &address, sizeof(address));
+    if (bind(sockfd, (struct sockaddr*) &address, sizeof(address)) == -1) {
+        fprintf(stderr, "Failed to bind socket to interface\n");
+        return -1;
+    }
+
+    return sockfd;
 }
 
-int open_raw_socket(){
-    // Parameter explanation (because it took me forever to understand this):
-    // domain: AF_PACKET defines what layer we're attaching the socket to: the link layer for the lowest level possible
-    //      Going lower than this layer is not possible without getting into the NIC firmware
-    // type: SOCK_RAW means do not parse the packets at all, provide them to us in their binary format as they arrive
-    // protocol: htons(ETH_P_ALL) provide us with ALL the packets, kernel expects the protocol in network order so convert to big endian
-    return socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+uint32_t get_ipv4_address_for_interface(const char* ifname, uint32_t* ip_out) {
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0); 
+
+    struct ifreq interface;
+    memset(&interface, 0, sizeof(interface));
+    strncpy(interface.ifr_name, ifname, IFNAMSIZ - 1);
+    interface.ifr_name[IFNAMSIZ - 1] = '\0';
+
+    if (ioctl(sockfd, SIOCGIFADDR, &interface) == -1) {
+        fprintf(stderr, "Unable to get ip address from provided interface name\n");
+        close(sockfd);
+        return -1;
+    }
+
+    struct sockaddr_in* addr = (struct sockaddr_in*)&interface.ifr_addr;
+    *ip_out = addr->sin_addr.s_addr;
+
+    // Convert to string
+    char str[INET_ADDRSTRLEN];
+    if (inet_ntop(AF_INET, &addr->sin_addr, str, INET_ADDRSTRLEN) == NULL) {
+        perror("inet_ntop");
+        close(sockfd);
+        return -1;
+    }
+
+    printf("IP Address: %s", str);
+
+    close(sockfd);
+    return 0;
 }

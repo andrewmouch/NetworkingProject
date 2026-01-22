@@ -16,21 +16,22 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    int sockfd = open_raw_socket();
+    int sockfd = open_socket_for_interface(argv[1]);
     if (sockfd == -1) {
-        fprintf(stderr, "Unable to open socket\n");
+        fprintf(stderr, "Failed to bind socket to interface\n");
         return EXIT_FAILURE;
     }
-    
-    int iface = bind_socket_to_interface(sockfd, argv[1]);
-    if (iface == -1) {
-        fprintf(stderr, "Failed to bind socket to interface\n");
+
+    uint32_t ipv4_address;
+    int get_ipv4_status = get_ipv4_address_for_interface(argv[1], &ipv4_address);
+    if (get_ipv4_status == -1) {
+        fprintf(stderr, "failed to get ipv4 address of interface\n");
         return EXIT_FAILURE;
     }
     
     printf("Binded socket to provided interface, listening to traffic\n");
     unsigned char buffer[2048];
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1; i++) {
         ssize_t num_bytes = recv(sockfd, buffer, sizeof(buffer), 0);
 
         if (num_bytes < 0) {
