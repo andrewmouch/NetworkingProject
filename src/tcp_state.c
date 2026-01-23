@@ -223,6 +223,7 @@ int update_tcp_state(const tcp_state_table_t* table, const tcp_result_t* tcp_res
         if (!(tcp_result->flag_syn && !tcp_result->flag_ack)) {
             // let's only add the new nodes if the packet is a syn request
             // That way we reduce clutter for already existing communications when we start the process
+            return -1;
         }
         node = add_tcp_connection_node(table, local_ip_address, remote_ip_address, local_port, remote_port);
         if (!node) {
