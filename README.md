@@ -46,6 +46,10 @@ Relied on manual testing for validation:
 ## Build & Run
 All my work was completed on a machine running Linux Ubuntu. Due to the low-level nature of the program as well as the usage of linux C libraries, I don't anticipate this will work on other operating systems.
 
+## Third-party libraries
+This project vendors the Mongoose networking library. I'll likely eventually introduce a package manager of some sort.
+(https://github.com/cesanta/mongoose)
+
 ```
 make
 
