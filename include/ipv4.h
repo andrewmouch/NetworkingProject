@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     IPV4_PROTO_OTHER = 0,
@@ -14,6 +15,8 @@ typedef struct {
     ipv4_protocol_t ipv4_protocol;
     uint32_t source_ip_address;
     uint32_t dest_ip_address;
+    bool checksum_is_valid;
+    
     const unsigned char* payload;
     size_t payload_len;
 } ipv4_result_t;
