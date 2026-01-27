@@ -37,6 +37,9 @@ int parse_ipv4_header(const unsigned char* packet, size_t len, ipv4_result_t* ou
     out->source_ip_address = ip_header->saddr;
     out->dest_ip_address = ip_header->daddr;
 
+    uint16_t checksum_res = ones_complement_sum((uint16_t*)ip_header, num_bytes_ip_header/2);
+    out->checksum_is_valid = checksum_res == 0;
+
     // printf("       IP Source Address: ");
     // printf("%s", source_ip_address);
     // printf("\n");
