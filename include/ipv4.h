@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <netinet/ip.h>
 #include <stdbool.h>
 
 typedef enum {
@@ -18,8 +19,8 @@ typedef struct {
     uint32_t source_ip_address;
     uint32_t dest_ip_address;
 
-    char* source_ip_address_dotted_quad;
-    char* dest_ip_address_dotted_quad;
+    char source_ip_address_dotted_quad[INET_ADDRSTRLEN];
+    char dest_ip_address_dotted_quad[INET_ADDRSTRLEN];
 
     bool checksum_is_valid;
     
