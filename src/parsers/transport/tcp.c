@@ -1,6 +1,7 @@
 #define _DEFAULT_SOURCE
 
-#include "tcp.h"
+#include "parsers/transport/tcp.h"
+#include "parsers/context.h"
 #include <inttypes.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -46,12 +47,12 @@ void print_tcp_set_flags(uint8_t flags) {
     printf("]");
 }
 
-int parse_tcp_header(const unsigned char* segment, size_t len, tcp_result_t* out) {
-    if (len < sizeof(struct tcphdr)) {
+int parse_tcp_header(packet_ctx_t* packet_ctx) {
+    if (packet_ctx->remaining_len < sizeof(struct tcphdr)) {
         fprintf(stderr, "Segment too small to contain a tcp header");
         return -1;
     }
-    struct tcphdr *tcp_header = (struct tcphdr*) (segment);
+    struct tcphdr *tcp_header = (struct tcphdr*) (packet_ctx->current_pos);
     // printf("          TCP Source Port: %" PRIu16 "\n", ntohs(tcp_header->th_sport));
     // printf("          TCP Destination Port: %" PRIu16 "\n", ntohs(tcp_header->th_dport));
     // printf("          TCP Sequence Number: %" PRIu32 "\n", ntohl(tcp_header->th_seq));
@@ -60,16 +61,16 @@ int parse_tcp_header(const unsigned char* segment, size_t len, tcp_result_t* out
     // print_tcp_set_flags(tcp_header->th_flags);
     // printf("\n");
     
-    out->source_port = ntohs(tcp_header->th_sport);
-    out->dest_port = ntohs(tcp_header->th_dport);
-    out->seq_number = ntohl(tcp_header->th_seq);
-    out->ack_number = ntohl(tcp_header->th_ack);
-    out->flag_syn = tcp_header->th_flags & TH_SYN;
-    out->flag_ack = tcp_header->th_flags & TH_ACK;
-    out->flag_fin = tcp_header->th_flags & TH_FIN;
-    out->flag_rst = tcp_header->th_flags & TH_RST;
-    out->flag_psh = tcp_header->th_flags & TH_PUSH;
-    out->flag_urg = tcp_header->th_flags & TH_URG;
+    packet_ctx->tcp.source_port = ntohs(tcp_header->th_sport);
+    packet_ctx->tcp.dest_port = ntohs(tcp_header->th_dport);
+    packet_ctx->tcp.seq_number = ntohl(tcp_header->th_seq);
+    packet_ctx->tcp.ack_number = ntohl(tcp_header->th_ack);
+    packet_ctx->tcp.flag_syn = tcp_header->th_flags & TH_SYN;
+    packet_ctx->tcp.flag_ack = tcp_header->th_flags & TH_ACK;
+    packet_ctx->tcp.flag_fin = tcp_header->th_flags & TH_FIN;
+    packet_ctx->tcp.flag_rst = tcp_header->th_flags & TH_RST;
+    packet_ctx->tcp.flag_psh = tcp_header->th_flags & TH_PUSH;
+    packet_ctx->tcp.flag_urg = tcp_header->th_flags & TH_URG;
 
     return 0;
 }

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef struct packet_ctx packet_ctx_t;
+
 typedef struct {
     uint16_t source_port;
     uint16_t dest_port;
@@ -18,4 +20,4 @@ typedef struct {
     bool flag_urg; 
 } tcp_result_t;
 
-int parse_tcp_header(const unsigned char* packet, size_t len, tcp_result_t* out);
+int parse_tcp_header(packet_ctx_t* packet_ctx);

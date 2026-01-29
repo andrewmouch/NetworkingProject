@@ -2,8 +2,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "ipv4.h"
-#include "tcp.h"
+#include "parsers/network/ipv4.h"
+#include "parsers/transport/tcp.h"
 
 typedef enum {
     // For now, we'll use closed as the same for closed/listen
