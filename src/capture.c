@@ -7,9 +7,11 @@
 #include <unistd.h>
 #include <string.h>
 #include "socket.h"
-#include "ethernet.h"
-#include "ipv4.h"
-#include "tcp.h"
+#include "parsers/link/ethernet.h"
+#include "parsers/network/ipv4.h"
+#include "parsers/transport/tcp.h"
+#include "parsers/context.h"
+#include "parsers/dispatch.h"
 #include "tcp_state.h"
 #include "cJSON.h"
 #include "mongoose.h"
@@ -32,7 +34,7 @@ void* capture_packets(void *arg){
     
     printf("Binded socket to provided interface, listening to traffic\n");
     unsigned char buffer[2048];
-    tcp_state_table_t* table = create_tcp_state_table(4096, ipv4_address);
+    // tcp_state_table_t* table = create_tcp_state_table(4096, ipv4_address);
     while (*args->should_capture) {
         ssize_t num_bytes = recv(sockfd, buffer, sizeof(buffer), 0);
 
@@ -44,28 +46,32 @@ void* capture_packets(void *arg){
         size_t u_num_bytes = (size_t) num_bytes;
         printf("Packet length (in bytes): %zu\n", u_num_bytes);
 
+        packet_ctx_t ctx = {
+            .packet = buffer,
+            .len = u_num_bytes,
+            .current_pos = buffer, // Start parsing at the beginning
+            .remaining_len = u_num_bytes
+        };
+
         // Linux normalizes headers into ethernet framing (irrespective of whether it may be Wi-Fi or another protocol)
         // Hence why I'm able to call parse ethernet header on all the incoming packets
         // I think better practice here is to check the ifreq object to see exactly what protocol/family it is
         // In the meantime, other link layer protocols are not supported
-        ethresult_t ethresult;
-        int eth_status = parse_ethernet_header(buffer, u_num_bytes, &ethresult);
-        if (eth_status == -1) continue;
+        dispatch_link_layer(&ctx);
+        // if (eth_status == -1) continue;
         
-        ipv4_result_t ipv4_result;
-        int ipv4_status = parse_ipv4_header(ethresult.payload, ethresult.payload_len, &ipv4_result);
-        if (ipv4_status == -1) continue;
+        dispatch_network_layer(&ctx);
+        // if (ipv4_status == -1) continue;
  
-        tcp_result_t tcp_result;
-        int tcp_status = parse_tcp_header(ipv4_result.payload, ipv4_result.payload_len, &tcp_result);
-        if (tcp_status == -1) continue;
+        dispatch_transport_layer(&ctx);
+        // if (tcp_status == -1) continue;
 
-        int update_tcp_state_status = update_tcp_state(table, &tcp_result, &ipv4_result);
-        if (update_tcp_state_status == -1) continue;
+        // int update_tcp_state_status = update_tcp_state(table, &tcp_result, &ipv4_result);
+        // if (update_tcp_state_status == -1) continue;
 
         cJSON *json = cJSON_CreateObject();
-        cJSON_AddStringToObject(json, "src_ip", ipv4_result.source_ip_address_dotted_quad);
-        cJSON_AddStringToObject(json, "dst_ip", ipv4_result.dest_ip_address_dotted_quad);
+        cJSON_AddStringToObject(json, "src_ip", ctx.ipv4.source_ip_address_dotted_quad);
+        cJSON_AddStringToObject(json, "dst_ip", ctx.ipv4.dest_ip_address_dotted_quad);
 
         char *json_str = cJSON_PrintUnformatted(json);
         cJSON_Delete(json);

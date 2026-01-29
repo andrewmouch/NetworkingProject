@@ -4,16 +4,12 @@
 #include <stdint.h>
 #include <netinet/ip.h>
 #include <stdbool.h>
+#include "parsers/types.h"
 
-typedef enum {
-    IPV4_PROTO_OTHER = 0,
-    IPV4_PROTO_ICMP = 1,
-    IPV4_PROTO_TCP = 6,
-    IPV4_PROTO_UDP = 17
-} ipv4_protocol_t;
+typedef struct packet_ctx packet_ctx_t;
 
 typedef struct {
-    ipv4_protocol_t ipv4_protocol;
+    transport_protocol_t transport_protocol_t;
 
     // Addresses are stored in network byte order
     uint32_t source_ip_address;
@@ -28,4 +24,4 @@ typedef struct {
     size_t payload_len;
 } ipv4_result_t;
 
-int parse_ipv4_header(const unsigned char* packet, size_t len, ipv4_result_t* out);
+int parse_ipv4_header(packet_ctx_t* packet_ctx);
