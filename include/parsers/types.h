@@ -20,5 +20,5 @@ typedef enum {
     ERR_TRUNCATED,   // Packet shorter than header says
     ERR_BAD_CHECKSUM,
     ERR_UNKNOWN_PROTO,
-    ERR_INVALID_VAL
+    ERR_INTENAL
 } parse_status_t;

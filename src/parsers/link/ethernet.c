@@ -3,34 +3,55 @@
 #include <stdio.h>
 #include <net/ethernet.h>
 #include <arpa/inet.h>
+#include <string.h>
 
-// static void print_mac_address(unsigned char* bytes) {
-    // printf("%02x:%02x:%02x:%02x:%02x:%02x", bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5]); 
-// }
+int copy_mac_address(char* dest, unsigned char* bytes){
+    return snprintf(
+        dest, 
+        18, 
+        "%02x:%02x:%02x:%02x:%02x:%02x",
+        bytes[0],
+        bytes[1],
+        bytes[2], 
+        bytes[3],
+        bytes[4], 
+        bytes[5]
+    );
+}
 
-int parse_ethernet_header(packet_ctx_t* packet_ctx) {
+parse_status_t parse_ethernet_header(packet_ctx_t* packet_ctx) {
     if (packet_ctx->remaining_len < sizeof(struct ethhdr)) {
         fprintf(stderr, "Frame too small to contain ethernet header, continuing\n");
-        return -1;
+        return ERR_TRUNCATED;
     }
 
     struct ethhdr *ethernet_header = (struct ethhdr *)packet_ctx->current_pos;
-    // printf("   Ethernet host destination: ");
-    // print_mac_address(ethernet_header->h_dest);
-    // printf("\n");
-    // printf("   Ethernet host source: "); 
-    // print_mac_address(ethernet_header->h_source);
-    // printf("\n");
     
+    if (copy_mac_address(packet_ctx->eth.host_destination, ethernet_header->h_dest) == -1) {
+        return ERR_INTENAL; 
+    }
+
+    if (copy_mac_address(packet_ctx->eth.host_source, ethernet_header->h_source) == -1) {
+        return ERR_INTENAL; 
+    }
+    
+    packet_ctx->current_pos = packet_ctx->current_pos + ETH_HLEN;
+    packet_ctx->remaining_len = packet_ctx->remaining_len - ETH_HLEN;
+
     switch(ntohs(ethernet_header->h_proto)) {
         case(ETH_P_IP):
             packet_ctx->network_protocol = NETWORK_PROTO_IP;
-            packet_ctx->current_pos = packet_ctx->current_pos + ETH_HLEN;
-            packet_ctx->remaining_len = packet_ctx->remaining_len - ETH_HLEN;
-            return 0;
+            break;
         case(ETH_P_IPV6):
-            return -1;
+            packet_ctx->network_protocol = NETWORK_PROTO_IPV6;
+            break;
+        case(ETH_P_ARP):
+            packet_ctx->network_protocol = NETWORK_PROTO_ARP;
+            break;
         default:
-            return -1;
+            packet_ctx->network_protocol = NETWORK_PROTO_OTHER;
+            break;
     }
+
+    return PARSE_OK;
 }

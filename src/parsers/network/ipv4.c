@@ -16,7 +16,7 @@
     // }
 // }
 
-int parse_ipv4_header(packet_ctx_t* packet_ctx) {
+parse_status_t parse_ipv4_header(packet_ctx_t* packet_ctx) {
     // Check if version and IHL byte is in packet before accessing memory
     if (packet_ctx->remaining_len < 1) {
         fprintf(stderr, "Packet doesn't contain version/IHL byte in IP header, continuing\n");

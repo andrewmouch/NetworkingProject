@@ -40,7 +40,6 @@ char* packet_queue_pop(packet_queue_t* q) {
     pthread_mutex_unlock(&q->mutex);
 
     char* json = node->json;
-    printf("REMOVING THE FOLLOWING PACKET: %s", json);
     free(node);
     return json;
 }
@@ -60,7 +59,6 @@ char* packet_queue_try_pop(packet_queue_t* q) {
     pthread_mutex_unlock(&q->mutex);
 
     char* json = node->json;
-    printf("REMOVING THE FOLLOWING PACKET: %s", json);
     free(node);
     return json;
 }
