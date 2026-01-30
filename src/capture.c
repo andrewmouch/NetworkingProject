@@ -75,9 +75,6 @@ void* capture_packets(void *arg){
 
         packet_queue_push(args->packet_queue, json_str);
         
-        printf("HOST DEST: %s\n", ctx.eth.host_destination);
-        printf("HOST SOURCE %s\n", ctx.eth.host_source);
-
         // print_tcp_state_table(table);
     }
     close(sockfd);

@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-int copy_mac_address(char* dest, unsigned char* bytes){
+static int copy_mac_address(char* dest, unsigned char* bytes){
     return snprintf(
         dest, 
         18, 
