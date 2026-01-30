@@ -47,7 +47,7 @@ void print_tcp_set_flags(uint8_t flags) {
     printf("]");
 }
 
-int parse_tcp_header(packet_ctx_t* packet_ctx) {
+parse_status_t parse_tcp_header(packet_ctx_t* packet_ctx) {
     if (packet_ctx->remaining_len < sizeof(struct tcphdr)) {
         fprintf(stderr, "Segment too small to contain a tcp header");
         return -1;

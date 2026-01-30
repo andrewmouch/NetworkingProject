@@ -53,10 +53,7 @@ void* capture_packets(void *arg){
             .remaining_len = u_num_bytes
         };
 
-        // Linux normalizes headers into ethernet framing (irrespective of whether it may be Wi-Fi or another protocol)
-        // Hence why I'm able to call parse ethernet header on all the incoming packets
-        // I think better practice here is to check the ifreq object to see exactly what protocol/family it is
-        // In the meantime, other link layer protocols are not supported
+
         dispatch_link_layer(&ctx);
         // if (eth_status == -1) continue;
         
@@ -76,9 +73,10 @@ void* capture_packets(void *arg){
         char *json_str = cJSON_PrintUnformatted(json);
         cJSON_Delete(json);
 
-        printf("GOT HERE WITH THE JSON STRING OF: %s", json_str);
-
         packet_queue_push(args->packet_queue, json_str);
+        
+        printf("HOST DEST: %s\n", ctx.eth.host_destination);
+        printf("HOST SOURCE %s\n", ctx.eth.host_source);
 
         // print_tcp_state_table(table);
     }

@@ -24,4 +24,4 @@ typedef struct {
     size_t payload_len;
 } ipv4_result_t;
 
-int parse_ipv4_header(packet_ctx_t* packet_ctx);
+parse_status_t parse_ipv4_header(packet_ctx_t* packet_ctx);

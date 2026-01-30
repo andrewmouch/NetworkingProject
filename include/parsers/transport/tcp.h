@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "parsers/types.h"
 
 typedef struct packet_ctx packet_ctx_t;
 
@@ -20,4 +21,4 @@ typedef struct {
     bool flag_urg; 
 } tcp_result_t;
 
-int parse_tcp_header(packet_ctx_t* packet_ctx);
+parse_status_t parse_tcp_header(packet_ctx_t* packet_ctx);
