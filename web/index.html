@@ -3,87 +3,181 @@
 <head>
     <meta charset="UTF-8" />
     <title>TCP Connection Analyzer</title>
+
     <style>
-        body { font-family: sans-serif; margin: 20px; background: #f4f4f9; }
-        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #007bff; color: white; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        .controls { margin-bottom: 20px; }
-        button { padding: 10px 15px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; }
-        button#stopBtn { background: #dc3545; }
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background: #f4f4f9;
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr {
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #28a745;
+            color: white;
+            margin-right: 10px;
+        }
+
+        button.stop {
+            background: #dc3545;
+        }
+
+        button.back {
+            background: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 70vh;
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
 
-    <h1>TCP Live Traffic</h1>
+<h1>TCP Live Traffic</h1>
+
+<!-- ================= LIST VIEW ================= -->
+<div id="packet-list">
 
     <div class="controls">
         <button onclick="startCapture()">Start Capture</button>
-        <button id="stopBtn" onclick="stopCapture()">Stop Capture</button>
+        <button class="stop" onclick="stopCapture()">Stop Capture</button>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>Timestamp</th>
-                <th>Source IP</th>
-                <th>Destination IP</th>
+                <th>Index</th>
+                <th>Packet Time</th>
             </tr>
         </thead>
-        <tbody id="packet-table-body">
-            <!-- Data rows will appear here -->
-        </tbody>
+        <tbody id="packet-table-body"></tbody>
     </table>
 
-    <script>
-        const tableBody = document.getElementById('packet-table-body');
+</div>
 
-        // 1. Start the backend capture
-        async function startCapture() {
-            try {
-                const res = await fetch("/api/capture/start");
-                console.log("Capture started:", await res.text());
-            } catch(err) {
-                console.error("Failed to start", err);
-            }
+<!-- ================= DETAIL VIEW ================= -->
+<div id="packet-detail" style="display:none;">
+    <button class="back" onclick="showList()">← Back to list</button>
+    <h2>Packet Detail</h2>
+    <pre id="packet-data"></pre>
+</div>
+
+<script>
+    const tableBody = document.getElementById("packet-table-body");
+    let packetIndex = 0;
+
+    // Keep packets in memory for fast access
+    const packets = new Map();
+
+    async function startCapture() {
+        try {
+            await fetch("/api/capture/start");
+        } catch (e) {
+            console.error("Failed to start capture", e);
         }
+    }
 
-        // 2. Optional: Stop the backend capture
-        async function stopCapture() {
+    async function stopCapture() {
+        try {
             await fetch("/api/capture/stop");
+        } catch (e) {
+            console.error("Failed to stop capture", e);
         }
+    }
 
-        // 3. Listen to the SSE stream
-        const eventSource = new EventSource("/api/capture/stream");
+    function showPacketDetail(index) {
+        const packet = packets.get(index);
+        if (!packet) return;
 
-        eventSource.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                
-                // Create a new row
-                const row = `
-                    <tr>
-                        <td>${new Date().toLocaleTimeString()}</td>
-                        <td>${data.src_ip || 'N/A'}</td>
-                        <td>${data.dst_ip || 'N/A'}</td>
-                    </tr>
-                `;
+        document.getElementById("packet-data").textContent =
+            JSON.stringify(packet, null, 2);
 
-                // Add to the top of the table so newest items appear first
-                tableBody.insertAdjacentHTML('afterbegin', row);
+        document.getElementById("packet-list").style.display = "none";
+        document.getElementById("packet-detail").style.display = "block";
+    }
 
-                // Optional: Limit rows to prevent browser lag (e.g., keep last 50)
-                if (tableBody.children.length > 50) {
-                    tableBody.removeChild(tableBody.lastChild);
-                }
+    function showList() {
+        document.getElementById("packet-detail").style.display = "none";
+        document.getElementById("packet-list").style.display = "block";
+    }
 
-            } catch (e) {
-                console.error("Error parsing JSON:", e, event.data);
+    // ================= SSE =================
+    const eventSource = new EventSource("/api/capture/stream");
+
+    eventSource.onmessage = (event) => {
+        try {
+            const packet = JSON.parse(event.data);
+            const index = packetIndex++;
+            const timestamp = new Date().toLocaleTimeString();
+
+            packets.set(index, packet);
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${index}</td>
+                <td>${timestamp}</td>
+            `;
+
+            row.onclick = () => showPacketDetail(index);
+
+            tableBody.insertAdjacentElement("afterbegin", row);
+
+            // Prevent unbounded growth
+            if (tableBody.children.length > 200) {
+                tableBody.removeChild(tableBody.lastChild);
             }
-        };
 
-        eventSource.onerror = (err) => console.error("SSE error:", err);
-    </script>
+        } catch (e) {
+            console.error("Bad packet data", e);
+        }
+    };
+
+    eventSource.onerror = (e) => {
+        console.error("SSE error", e);
+    };
+</script>
+
 </body>
 </html>
